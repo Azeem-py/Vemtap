@@ -9,6 +9,7 @@ import { SendMessageDto } from '../dto/send-message.dto';
 import { Channel } from '../enums/channel.enum';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { CreateSimpleFlowDto } from '../dto/create-simple-flow.dto';
 
 @Injectable()
 export class FlowEngineService {
@@ -24,6 +25,134 @@ export class FlowEngineService {
     private readonly messagingEngine: MessagingEngineService,
     @InjectQueue('messaging-flow-delay') private readonly delayQueue: Queue,
   ) {}
+
+  async createSimpleFlow(dto: CreateSimpleFlowDto, businessId: string): Promise<Flow> {
+    const triggerType = this.mapEventToTrigger(dto.event);
+    const nodes = [];
+    const edges = [];
+
+    // Trigger is implicit in Flow metadata, but for structure visualization we might want a Start node
+    // Step 1: Start Node (Trigger)
+    nodes.push({
+        id: 'start',
+        type: 'trigger',
+        data: { trigger: triggerType },
+        position: { x: 0, y: 0 }
+    });
+
+    let previousNodeId = 'start';
+
+    // Step 2: Condition (Delay)
+    if (dto.condition && dto.condition.startsWith('delay:')) {
+        const delayParts = dto.condition.replace('delay:', '').trim().split(' ');
+        const time = parseInt(delayParts[0]);
+        const unit = delayParts[1]; // hours, days etc.
+
+        nodes.push({
+            id: 'delay_node',
+            type: 'delay',
+            data: { time, unit },
+            position: { x: 0, y: 100 }
+        });
+        edges.push({
+            id: 'e1',
+            source: 'start',
+            target: 'delay_node'
+        });
+        previousNodeId = 'delay_node';
+    }
+
+    // Step 3: Action (Message)
+    const channel = this.mapActionToChannel(dto.action);
+    if (channel) { // If it's a message action
+        nodes.push({
+            id: 'message_node',
+            type: 'send_message',
+            data: {
+                message: `Automated message for ${dto.name}`, // Placeholder content, should come from DTO or template
+                channel
+            },
+            position: { x: 0, y: 200 }
+        });
+        edges.push({
+            id: `e_${previousNodeId}_message`,
+            source: previousNodeId,
+            target: 'message_node'
+        });
+    }
+
+    const flow = this.flowRepo.create({
+        businessId,
+        branchId: dto.branchId,
+        name: dto.name,
+        triggerType,
+        status: FlowStatus.ACTIVE, // Auto-activate simple flows
+        structure: { nodes, edges }
+    });
+
+    return this.flowRepo.save(flow);
+  }
+
+  async getSimpleFlows(branchId: string): Promise<any[]> {
+      const flows = await this.flowRepo.find({ where: { branchId } });
+      return flows.map(flow => {
+          // Reverse map to simple structure
+          // This is a "best effort" mapping since flows can be complex
+          const trigger = flow.triggerType;
+          const delayNode = flow.structure?.nodes?.find((n: any) => n.type === 'delay');
+          const messageNode = flow.structure?.nodes?.find((n: any) => n.type === 'send_message');
+
+          let condition = 'immediate';
+          if (delayNode) {
+              condition = `delay: ${delayNode.data.time} ${delayNode.data.unit}`;
+          }
+
+          let action = 'unknown';
+          if (messageNode) {
+              if (messageNode.data.channel === Channel.SMS) action = 'send_sms';
+              if (messageNode.data.channel === Channel.WHATSAPP) action = 'send_whatsapp';
+              if (messageNode.data.channel === Channel.EMAIL) action = 'send_email';
+          }
+
+          return {
+              id: flow.id,
+              name: flow.name,
+              event: this.mapTriggerToEvent(trigger),
+              condition,
+              action,
+              active: flow.status === FlowStatus.ACTIVE
+          };
+      });
+  }
+
+  private mapEventToTrigger(event: string): FlowTriggerType {
+      switch(event) {
+          case 'first_tag': return FlowTriggerType.NEW_VISITOR;
+          case 'repeat_tag': return FlowTriggerType.REPEAT_VISIT; // Or TAG_APPLIED
+          case 'reward_earned': return FlowTriggerType.LOYALTY_MILESTONE;
+          case 'survey_completed': return FlowTriggerType.SURVEY_COMPLETED;
+          default: return FlowTriggerType.MANUAL;
+      }
+  }
+
+  private mapTriggerToEvent(trigger: FlowTriggerType): string {
+      switch(trigger) {
+          case FlowTriggerType.NEW_VISITOR: return 'first_tag';
+          case FlowTriggerType.REPEAT_VISIT: return 'repeat_tag';
+          case FlowTriggerType.LOYALTY_MILESTONE: return 'reward_earned';
+          case FlowTriggerType.SURVEY_COMPLETED: return 'survey_completed';
+          default: return 'manual';
+      }
+  }
+
+  private mapActionToChannel(action: string): Channel | null {
+      if (action === 'send_sms') return Channel.SMS;
+      if (action === 'send_whatsapp') return Channel.WHATSAPP;
+      if (action === 'send_email') return Channel.EMAIL;
+      return null;
+  }
+
+  // ... (Existing triggerFlow, executeNode, handlers, helpers remain unchanged) ...
 
   async triggerFlow(triggerType: FlowTriggerType, branchId: string, context: any): Promise<void> {
     this.logger.log(`Triggering flow: ${triggerType} for branch ${branchId}`);

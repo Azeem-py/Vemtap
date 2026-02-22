@@ -8,13 +8,9 @@ import { PermissionsGuard } from '../../../common/guards/permissions.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { User, UserRole } from '../../users/entities/user.entity';
 import { Flow, FlowStatus, FlowTriggerType } from '../entities/flow.entity';
-
-export class CreateFlowDto {
-  name: string;
-  triggerType: FlowTriggerType;
-  branchId?: string;
-  structure: any;
-}
+import { CreateFlowDto } from '../dto/create-flow.dto';
+import { CreateSimpleFlowDto } from '../dto/create-simple-flow.dto';
+import { FlowEngineService } from '../services/flow-engine.service';
 
 @ApiTags('Flow Builder')
 @Controller('messaging/flows')
@@ -22,13 +18,14 @@ export class FlowController {
   constructor(
     @InjectRepository(Flow)
     private readonly flowRepo: Repository<Flow>,
+    private readonly flowEngine: FlowEngineService,
   ) {}
 
   @Post()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(UserRole.OWNER, UserRole.MANAGER)
-  @ApiOperation({ summary: 'Create a new flow' })
+  @ApiOperation({ summary: 'Create a new complex flow' })
   @ApiBody({ type: CreateFlowDto })
   async create(@Body() dto: CreateFlowDto, @Request() req: any) {
     const user = req.user as User;
@@ -51,10 +48,45 @@ export class FlowController {
     return this.flowRepo.save(flow);
   }
 
+  @Post('simple')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Create a simplified automation rule (converts to flow)' })
+  @ApiBody({ type: CreateSimpleFlowDto })
+  async createSimple(@Body() dto: CreateSimpleFlowDto, @Request() req: any) {
+    const user = req.user as User;
+
+    let branchId = dto.branchId;
+    if (user.role === UserRole.MANAGER || user.role === UserRole.STAFF) {
+        branchId = user.branchId;
+    } else if (user.role === UserRole.OWNER && !branchId) {
+        throw new BadRequestException('branchId is required for flows created by Owner');
+    }
+
+    // Ensure DTO has the resolved branchId
+    dto.branchId = branchId;
+
+    return this.flowEngine.createSimpleFlow(dto, user.businessId);
+  }
+
+  @Get('simple')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @ApiOperation({ summary: 'Get simplified automation rules' })
+  async getSimple(@Query('branchId') branchId: string, @Request() req: any) {
+    const user = req.user as User;
+    // @ts-ignore
+    const resolved = branchId || user.branchId;
+    if (!resolved) throw new BadRequestException('branchId is required');
+
+    return this.flowEngine.getSimpleFlows(resolved);
+  }
+
   @Get()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @ApiOperation({ summary: 'Get flows by branch' })
+  @ApiOperation({ summary: 'Get all flows by branch' })
   async findAll(@Query('branchId') branchId: string, @Request() req: any) {
     const user = req.user as User;
     // @ts-ignore

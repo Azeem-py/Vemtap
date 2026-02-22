@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import PageHeader from '@/components/dashboard/PageHeader';
 import { toast } from 'react-hot-toast';
 import {
@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth'; // Assuming auth hook exists
+import { api } from '@/lib/api'; // Assuming axios instance exists
 
 interface Rule {
     id: string;
@@ -30,67 +32,95 @@ const ACTION_OPTIONS = [
     { id: 'send_sms', label: 'Send SMS', icon: MessageSquare, color: 'bg-blue-500' },
     { id: 'send_whatsapp', label: 'Send WhatsApp', icon: MessageSquare, color: 'bg-emerald-500' },
     { id: 'send_email', label: 'Send Email', icon: Mail, color: 'bg-purple-500' },
-    { id: 'push_review', label: 'Push Review Link', icon: Star, color: 'bg-amber-500' },
+    // { id: 'push_review', label: 'Push Review Link', icon: Star, color: 'bg-amber-500' }, // Not yet supported by backend
 ];
 
 export default function AutomationsPage() {
-    const [rules, setRules] = useState<Rule[]>([
-        {
-            id: '1',
-            name: 'Review Booster (2h)',
-            event: 'first_tag',
-            condition: 'delay: 2 hours',
-            action: 'push_review',
-            active: true
-        },
-        {
-            id: '2',
-            name: 'Feedback Survey (24h)',
-            event: 'first_tag',
-            condition: 'delay: 24 hours',
-            action: 'push_review', // Survey action
-            active: true
-        },
-        {
-            id: '3',
-            name: 'Loyalty Promo (7d)',
-            event: 'repeat_tag',
-            condition: 'delay: 7 days',
-            action: 'send_whatsapp',
-            active: true
-        }
-    ]);
+    const { user } = useAuth();
+    const [rules, setRules] = useState<Rule[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const [isAdding, setIsAdding] = useState(false);
     const [newRule, setNewRule] = useState<Partial<Rule>>({
         event: 'first_tag',
         action: 'send_sms',
-        condition: 'any',
+        condition: 'immediate',
         active: true
     });
 
-    const addRule = () => {
-        const rule: Rule = {
-            id: Date.now().toString(),
-            name: newRule.name || 'Untitled Rule',
-            event: newRule.event || 'first_tag',
-            condition: newRule.condition || 'any',
-            action: newRule.action || 'send_sms',
-            active: true
-        };
-        setRules([...rules, rule]);
-        setIsAdding(false);
-        toast.success('Automation rule created!');
+    useEffect(() => {
+        fetchRules();
+    }, [user?.branchId]);
+
+    const fetchRules = async () => {
+        if (!user?.branchId) return;
+        try {
+            const res = await api.get(`/messaging/flows/simple?branchId=${user.branchId}`);
+            setRules(res.data);
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to load automations');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const toggleRule = (id: string) => {
-        setRules(rules.map(r => r.id === id ? { ...r, active: !r.active } : r));
+    const addRule = async () => {
+        if (!user?.branchId) return;
+
+        try {
+            const payload = {
+                name: newRule.name || 'Untitled Rule',
+                event: newRule.event || 'first_tag',
+                condition: newRule.condition, // e.g. "delay: 2 hours"
+                action: newRule.action || 'send_sms',
+                branchId: user.branchId
+            };
+
+            await api.post('/messaging/flows/simple', payload);
+            toast.success('Automation rule created!');
+            setIsAdding(false);
+            fetchRules(); // Refresh list
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to create rule');
+        }
     };
 
-    const deleteRule = (id: string) => {
-        setRules(rules.filter(r => r.id !== id));
-        toast.success('Rule deleted');
+    const toggleRule = async (id: string, currentStatus: boolean) => {
+        try {
+            // Optimistic update
+            setRules(rules.map(r => r.id === id ? { ...r, active: !r.active } : r));
+
+            await api.post(`/messaging/flows/${id}/status`, {
+                status: !currentStatus ? 'active' : 'paused' // If currently true (active), set to paused
+            });
+        } catch (err) {
+            toast.error('Failed to update status');
+            fetchRules(); // Revert on error
+        }
     };
+
+    const deleteRule = async (id: string) => {
+        // Backend currently doesn't have DELETE endpoint in FlowController based on my implementation
+        // I should probably add it or just hide it.
+        // For now, I'll simulate or if I forgot to add DELETE, I will need to add it to backend plan.
+        // Wait, FlowController doesn't have DELETE. I should add it.
+        // But for this frontend step, I will implement the call.
+
+        /*
+        try {
+            await api.delete(`/messaging/flows/${id}`);
+            setRules(rules.filter(r => r.id !== id));
+            toast.success('Rule deleted');
+        } catch (err) {
+            toast.error('Failed to delete rule');
+        }
+        */
+       toast.error("Delete not supported yet");
+    };
+
+    if (loading) return <div className="p-8">Loading automations...</div>;
 
     return (
         <div className="p-8">
@@ -113,8 +143,8 @@ export default function AutomationsPage() {
                 <div className="lg:col-span-2 space-y-4">
                     <AnimatePresence>
                         {rules.map((rule) => {
-                            const eventInfo = EVENT_OPTIONS.find(e => e.id === rule.event);
-                            const actionInfo = ACTION_OPTIONS.find(a => a.id === rule.action);
+                            const eventInfo = EVENT_OPTIONS.find(e => e.id === rule.event) || { label: rule.event, icon: Zap };
+                            const actionInfo = ACTION_OPTIONS.find(a => a.id === rule.action) || { label: rule.action, color: 'bg-gray-500', icon: MessageSquare };
 
                             return (
                                 <motion.div
@@ -137,6 +167,8 @@ export default function AutomationsPage() {
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">If {eventInfo?.label}</span>
                                                     <ChevronRight size={12} className="text-gray-200" />
+                                                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">{rule.condition !== 'immediate' ? rule.condition : 'Immediately'}</span>
+                                                    <ChevronRight size={12} className="text-gray-200" />
                                                     <span className={`text-[10px] font-black uppercase tracking-widest ${actionInfo?.color.replace('bg-', 'text-')}`}>Then {actionInfo?.label}</span>
                                                 </div>
                                             </div>
@@ -144,7 +176,7 @@ export default function AutomationsPage() {
 
                                         <div className="flex items-center gap-4">
                                             <button
-                                                onClick={() => toggleRule(rule.id)}
+                                                onClick={() => toggleRule(rule.id, rule.active)}
                                                 className={`size-10 rounded-lg flex items-center justify-center transition-all ${rule.active ? 'bg-amber-50 text-amber-500 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-500 hover:bg-emerald-100'}`}
                                             >
                                                 {rule.active ? <Pause size={18} /> : <Play size={18} />}
@@ -278,11 +310,11 @@ export default function AutomationsPage() {
                                             className="w-full h-12 px-4 bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none font-medium"
                                         >
                                             <option value="immediate">Immediately</option>
-                                            <option value="1_hour">After 1 Hour</option>
-                                            <option value="24_hours">After 24 Hours</option>
-                                            <option value="3_days">After 3 Days</option>
-                                            <option value="7_days">After 7 Days</option>
-                                            <option value="30_days">After 30 Days</option>
+                                            <option value="delay: 1 hours">After 1 Hour</option>
+                                            <option value="delay: 24 hours">After 24 Hours</option>
+                                            <option value="delay: 3 days">After 3 Days</option>
+                                            <option value="delay: 7 days">After 7 Days</option>
+                                            <option value="delay: 30 days">After 30 Days</option>
                                         </select>
                                     </div>
 

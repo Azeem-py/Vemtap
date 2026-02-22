@@ -16,6 +16,8 @@ export enum FlowTriggerType {
   TAG_APPLIED = 'tag_applied',
   BIRTHDAY = 'birthday',
   LOYALTY_MILESTONE = 'loyalty_milestone',
+  SURVEY_COMPLETED = 'survey_completed',
+  REPEAT_VISIT = 'repeat_visit',
 }
 
 @Entity('flows')
