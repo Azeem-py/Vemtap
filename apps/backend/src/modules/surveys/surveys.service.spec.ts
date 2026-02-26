@@ -19,7 +19,11 @@ describe('SurveysService', () => {
   beforeEach(async () => {
     const mockRepository = {
       create: jest.fn().mockImplementation((dto) => dto),
-      save: jest.fn().mockImplementation((survey) => Promise.resolve({ ...survey, id: 'survey-1' })),
+      save: jest
+        .fn()
+        .mockImplementation((survey) =>
+          Promise.resolve({ ...survey, id: 'survey-1' }),
+        ),
       findOne: jest.fn(),
     };
 
@@ -43,7 +47,9 @@ describe('SurveysService', () => {
       repository.findOne.mockResolvedValue(mockSurvey);
       const result = await service.findByBusiness('biz-1');
       expect(result).toEqual(mockSurvey);
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { businessId: 'biz-1' } });
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { businessId: 'biz-1' },
+      });
     });
   });
 

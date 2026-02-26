@@ -3,15 +3,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { User } from './modules/users/entities/user.entity';
-import { Business } from './modules/businesses/entities/business.entity';
-import { Visit } from './modules/visitors/entities/visit.entity';
-import { Notification } from './modules/notifications/entities/notification.entity';
-import { Otp } from './modules/auth/entities/otp.entity';
-import { Device } from './modules/devices/entities/device.entity';
-import { Campaign } from './modules/campaigns/entities/campaign.entity';
-import { CampaignTemplate } from './modules/campaigns/entities/campaign-template.entity';
-import { Survey } from './modules/surveys/entities/survey.entity';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
@@ -20,9 +11,13 @@ import { DevicesModule } from './modules/devices/devices.module';
 import { VisitorsModule } from './modules/visitors/visitors.module';
 import { CampaignsModule } from './modules/campaigns/campaigns.module';
 import { SurveysModule } from './modules/surveys/surveys.module';
+import { ProductsModule } from './modules/products/products.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -37,7 +32,7 @@ import { RolesGuard } from './common/guards/roles.guard';
           return {
             type: 'sqlite',
             database: ':memory:',
-            entities: [User, Business, Visit, Notification, Otp, Device, Campaign, CampaignTemplate, Survey],
+            autoLoadEntities: true,
             synchronize: true,
             dropSchema: true,
           };
@@ -49,9 +44,12 @@ import { RolesGuard } from './common/guards/roles.guard';
           username: configService.get<string>('DB_USERNAME'),
           password: configService.get<string>('DB_PASSWORD'),
           database: configService.get<string>('DB_NAME'),
-          entities: [User, Business, Visit, Notification, Otp, Device, Campaign, CampaignTemplate, Survey],
+          autoLoadEntities: true,
           synchronize: configService.get<string>('NODE_ENV') === 'development',
-          ssl: configService.get<string>('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
+          ssl:
+            configService.get<string>('DB_SSL') === 'true'
+              ? { rejectUnauthorized: false }
+              : false,
         };
       },
       inject: [ConfigService],
@@ -64,6 +62,10 @@ import { RolesGuard } from './common/guards/roles.guard';
     VisitorsModule,
     CampaignsModule,
     SurveysModule,
+    ProductsModule,
+    AnalyticsModule,
+    SubscriptionsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -78,4 +80,4 @@ import { RolesGuard } from './common/guards/roles.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

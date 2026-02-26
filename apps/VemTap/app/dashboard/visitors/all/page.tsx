@@ -15,10 +15,11 @@ import SendMessageModal from '@/components/dashboard/SendMessageModal';
 import DeleteConfirmationModal from '@/components/dashboard/DeleteConfirmationModal';
 import VisitorDetailsModal from '@/components/dashboard/VisitorDetailsModal';
 import PreviewRewardModal from '@/components/dashboard/PreviewRewardModal';
+import ImportContactsModal from '@/components/dashboard/ImportContactsModal';
 import {
     Users, UserPlus, Repeat, Star, Download, Search, Edit,
     Trash2, MoreVertical, Send, MessageSquare, Gift,
-    CheckCircle2, Timer, MessageCircle
+    CheckCircle2, Timer, MessageCircle, MapPin, Upload
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -32,6 +33,7 @@ export default function AllVisitorsPage() {
     const [selectedVisitorForDetails, setSelectedVisitorForDetails] = useState<Visitor | null>(null);
     const [rewardPreviewVisitor, setRewardPreviewVisitor] = useState<Visitor | null>(null);
     const [deleteVisitorId, setDeleteVisitorId] = useState<string | null>(null);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     const { data: storeData, isLoading } = useQuery({
         queryKey: ['dashboard'],
@@ -58,7 +60,8 @@ export default function AllVisitorsPage() {
                 time: 'Just now',
                 timestamp: Date.now(),
                 status: data.status as any,
-                optIn: true
+                optIn: true,
+                branchId: 'head-office'
             };
             return dashboardApi.addVisitor(newVisitor);
         },
@@ -186,6 +189,15 @@ export default function AllVisitorsPage() {
             )
         },
         {
+            header: 'Location',
+            accessor: (item: Visitor) => (
+                <div className="flex items-center gap-1.5 text-slate-500 font-medium">
+                    <MapPin size={12} className="text-slate-400" />
+                    <span className="text-xs truncate max-w-[120px]">{item.location || 'N/A'}</span>
+                </div>
+            )
+        },
+        {
             header: 'Status',
             accessor: (item: Visitor) => (
                 <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${item.status === 'new' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
@@ -259,6 +271,13 @@ export default function AllVisitorsPage() {
                             Export CSV
                         </button>
                         <button
+                            onClick={() => setIsImportModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-text-main font-bold rounded-xl hover:bg-gray-50 transition-all text-sm shadow-sm"
+                        >
+                            <Upload size={18} />
+                            Import
+                        </button>
+                        <button
                             onClick={() => setIsAddModalOpen(true)}
                             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-hover transition-all text-sm shadow-md shadow-primary/20"
                         >
@@ -274,6 +293,11 @@ export default function AllVisitorsPage() {
                 onClose={() => setIsAddModalOpen(false)}
                 onSubmit={handleAddVisitor}
                 isLoading={isLoading || addVisitorMutation.isPending}
+            />
+
+            <ImportContactsModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
             />
 
             <SendMessageModal

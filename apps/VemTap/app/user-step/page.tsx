@@ -167,7 +167,8 @@ export default function UserStepPage() {
         addRedemptionRequest({
             visitorId: userData?.uniqueId || `V-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
             visitorName: name,
-            rewardTitle: customRewardMessage || "Free Reward"
+            rewardTitle: customRewardMessage || "Free Reward",
+            branchId: useCustomerFlowStore.getState().businessId || 'head-office'
         });
 
         // 2. Update customer state

@@ -1,7 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsEnum, IsNumber, IsOptional, IsBoolean, ValidateNested, IsString, IsObject } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  ValidateNested,
+  IsString,
+  IsObject,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { SurveyTriggerType, SurveyQuestion, TargetAudience } from '../entities/survey.entity';
+import {
+  SurveyTriggerType,
+  SurveyQuestion,
+  TargetAudience,
+} from '../entities/survey.entity';
 
 export class SurveyQuestionDto implements SurveyQuestion {
   @ApiProperty({ example: 'q1' })

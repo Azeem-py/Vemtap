@@ -16,6 +16,7 @@ import SendMessageModal from '@/components/dashboard/SendMessageModal';
 import VisitorDetailsModal from '@/components/dashboard/VisitorDetailsModal';
 import PreviewRewardModal from '@/components/dashboard/PreviewRewardModal';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useBusinessStore } from '@/store/useBusinessStore';
 
 
 export default function DashboardPage() {
@@ -50,6 +51,7 @@ export default function DashboardPage() {
         },
     });
 
+    const { getActiveBranch, activeBranchId } = useBusinessStore();
     const { hasReachedVisitorLimit, getPlan } = useSubscriptionStore();
     const currentPlan = getPlan();
 
@@ -59,6 +61,10 @@ export default function DashboardPage() {
             return;
         }
 
+        const activeBranch = getActiveBranch();
+        const bId = activeBranchId === 'all' ? 'head-office' : activeBranchId;
+        const loc = activeBranch?.address || 'Head Office';
+
         const isNew = Math.random() > 0.5;
         const newVisitor: Visitor = {
             id: Math.random().toString(36).substr(2, 9),
@@ -67,6 +73,8 @@ export default function DashboardPage() {
             time: 'Just now',
             timestamp: Date.now(),
             status: isNew ? 'new' : 'returning',
+            branchId: bId,
+            location: loc,
         };
         addVisitorMutation.mutate(newVisitor);
     };

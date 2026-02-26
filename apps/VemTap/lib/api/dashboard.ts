@@ -5,18 +5,51 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const dashboardApi = {
   fetchDashboardData: async () => {
-    await delay(800); // Simulate fetch latency
+    await delay(800);
     const state = useMockDashboardStore.getState();
+    const { activeBranchId } = (await import('@/store/useBusinessStore')).useBusinessStore.getState();
+    
+    const isAllBranches = activeBranchId === 'all';
+    
+    // Filter data by branch
+    const filteredVisitors = isAllBranches ? state.visitors : state.visitors.filter(v => v.branchId === activeBranchId);
+    const filteredMessages = isAllBranches ? state.messages : state.messages.filter(m => m.branchId === activeBranchId);
+    const filteredActivity = isAllBranches ? state.activityData : state.activityData.filter(a => a.branchId === activeBranchId);
+    const filteredStaff = isAllBranches ? state.staffMembers : state.staffMembers.filter(s => s.branchId === activeBranchId);
+    const filteredDevices = isAllBranches ? state.devices : state.devices.filter(d => d.branchId === activeBranchId);
+    const filteredRedemptions = isAllBranches ? state.redemptionRequests : state.redemptionRequests.filter(r => r.branchId === activeBranchId);
+
+    // Aggregate stats if 'all'
+    let stats = state.stats;
+    if (isAllBranches) {
+        // In a real app, this would be computed on the server
+        // For mock, we can just return the global stats (which are currently global)
+        stats = {
+            totalVisitors: state.visitors.length * 10, // Mocking larger combined numbers
+            newVisitors: state.visitors.filter(v => v.status === 'new').length * 10,
+            repeatVisitors: state.visitors.filter(v => v.status === 'returning').length * 10,
+            todaysVisits: state.visitors.filter(v => v.time === 'Just now').length * 5,
+        };
+    } else {
+        // Individual branch stats
+        stats = {
+            totalVisitors: filteredVisitors.length,
+            newVisitors: filteredVisitors.filter(v => v.status === 'new').length,
+            repeatVisitors: filteredVisitors.filter(v => v.status === 'returning').length,
+            todaysVisits: filteredVisitors.filter(v => v.time === 'Just now').length,
+        };
+    }
+
     return {
-      stats: state.stats,
-      recentVisitors: state.visitors,
-      activityData: state.activityData,
-      rewards: state.rewards,
-      notifications: state.notifications,
-      messages: state.messages,
-      staffMembers: state.staffMembers,
-      devices: state.devices,
-      redemptionRequests: state.redemptionRequests,
+      stats,
+      recentVisitors: filteredVisitors,
+      activityData: filteredActivity,
+      rewards: state.rewards, // Rewards can be global or filtered
+      notifications: state.notifications.filter(n => !n.branchId || isAllBranches || n.branchId === activeBranchId),
+      messages: filteredMessages,
+      staffMembers: filteredStaff,
+      devices: filteredDevices,
+      redemptionRequests: filteredRedemptions,
       templates: state.templates,
       businessName: 'Green Terrace Cafe',
       businessLogo: '/icon.png',

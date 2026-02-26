@@ -11,9 +11,10 @@ import { dashboardApi } from '@/lib/api/dashboard';
 import { Notification } from '@/lib/store/mockDashboardStore';
 import {
     Home, Users, Nfc, Send, Gift, BarChart, Users2, Settings,
-    ChevronDown, LogOut, Bell, Search, HelpCircle, Menu, X, Zap, MessageSquare, Smartphone
+    ChevronDown, LogOut, Bell, Search, HelpCircle, Menu, X, Zap, MessageSquare, Smartphone, Building2
 } from 'lucide-react';
 import Logo from '@/components/brand/Logo';
+import BranchSwitcher from './BranchSwitcher';
 
 interface SidebarProps {
     children: React.ReactNode;
@@ -396,7 +397,10 @@ export default function DashboardSidebar({ children }: SidebarProps) {
 
                 {/* User Profile */}
                 <div className="border-t border-gray-200 p-4">
-                    <Link href="/dashboard/settings/profile" className="flex items-center gap-3 mb-3 hover:bg-gray-50 p-2 rounded-xl transition-colors group">
+                    <Link
+                        href={`/business/${(storeName || user?.businessName || 'profile').toLowerCase().replace(/\s+/g, '-')}`}
+                        className="flex items-center gap-3 mb-3 hover:bg-gray-50 p-2 rounded-xl transition-colors group"
+                    >
                         <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform">
                             {businessLogo || defaultLogo ? (
                                 <img
@@ -434,13 +438,8 @@ export default function DashboardSidebar({ children }: SidebarProps) {
                         >
                             <Menu size={24} />
                         </button>
-                        <div className="relative max-w-md w-full hidden sm:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                            <input
-                                type="text"
-                                placeholder="Search visitors, messages..."
-                                className="w-full h-10 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all"
-                            />
+                        <div className="relative max-w-sm w-full hidden sm:block">
+                            <BranchSwitcher />
                         </div>
                     </div>
                     <div className="flex items-center gap-4 relative">

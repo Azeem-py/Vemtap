@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { SurveysService } from './surveys.service';
 import { CreateSurveyDto } from './dto/create-survey.dto';
 import { UpdateSurveyDto } from './dto/update-survey.dto';
@@ -16,7 +24,9 @@ export class SurveysController {
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get survey settings for the business' })
   async findOne(@Request() req) {
-    const survey = await this.surveysService.findByBusiness(req.user.businessId);
+    const survey = await this.surveysService.findByBusiness(
+      req.user.businessId,
+    );
     return survey || {}; // Return empty object if no survey yet? Or maybe 404? Frontend probably handles null/empty.
   }
 
@@ -24,8 +34,14 @@ export class SurveysController {
   @Roles(UserRole.OWNER, UserRole.MANAGER)
   @ApiOperation({ summary: 'Create or update survey settings' })
   @ApiBody({ type: CreateSurveyDto })
-  async createOrUpdate(@Request() req, @Body() createSurveyDto: CreateSurveyDto) {
-    return this.surveysService.createOrUpdate(req.user.businessId, createSurveyDto);
+  async createOrUpdate(
+    @Request() req,
+    @Body() createSurveyDto: CreateSurveyDto,
+  ) {
+    return this.surveysService.createOrUpdate(
+      req.user.businessId,
+      createSurveyDto,
+    );
   }
 
   @Patch()
@@ -33,6 +49,9 @@ export class SurveysController {
   @ApiOperation({ summary: 'Partially update survey settings' })
   @ApiBody({ type: UpdateSurveyDto })
   async update(@Request() req, @Body() updateSurveyDto: UpdateSurveyDto) {
-    return this.surveysService.createOrUpdate(req.user.businessId, updateSurveyDto);
+    return this.surveysService.createOrUpdate(
+      req.user.businessId,
+      updateSurveyDto,
+    );
   }
 }

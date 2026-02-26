@@ -9,6 +9,14 @@ export enum BusinessType {
   RETAIL = 'RETAIL',
   GYM = 'GYM',
   EVENT = 'EVENT',
+  LOGISTICS = 'LOGISTICS',
+  BEAUTY_WELLNESS = 'BEAUTY_WELLNESS',
+}
+
+export enum BusinessStatus {
+  ACTIVE = 'active',
+  PENDING = 'pending',
+  SUSPENDED = 'suspended',
 }
 
 @Entity('businesses')
@@ -22,6 +30,25 @@ export class Business extends AbstractBaseEntity {
     default: BusinessType.RETAIL,
   })
   type: BusinessType;
+
+  @Column({
+    type: 'simple-enum',
+    enum: BusinessStatus,
+    default: BusinessStatus.PENDING,
+  })
+  status: BusinessStatus;
+
+  @Column({ nullable: true })
+  suspensionReason: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  suspendedAt: Date;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  balance: number;
+
+  @Column({ type: 'simple-array', nullable: true })
+  documents: string[];
 
   @Column({ nullable: true })
   category: string;

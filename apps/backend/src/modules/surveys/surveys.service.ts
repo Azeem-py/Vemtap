@@ -16,7 +16,10 @@ export class SurveysService {
     return this.surveysRepository.findOne({ where: { businessId } });
   }
 
-  async createOrUpdate(businessId: string, dto: CreateSurveyDto | UpdateSurveyDto): Promise<Survey> {
+  async createOrUpdate(
+    businessId: string,
+    dto: CreateSurveyDto | UpdateSurveyDto,
+  ): Promise<Survey> {
     let survey = await this.findByBusiness(businessId);
     if (survey) {
       Object.assign(survey, dto);

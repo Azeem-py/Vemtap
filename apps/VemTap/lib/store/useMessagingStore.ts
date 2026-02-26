@@ -20,6 +20,7 @@ export interface Message {
     timestamp: number;
     channel: MessageChannel;
     attachments?: string[];
+    branchId: string;
 }
 
 export interface Thread {
@@ -33,6 +34,7 @@ export interface Thread {
     unreadCount: number;
     status: 'open' | 'resolved' | 'archived';
     tags: string[];
+    branchId: string;
 }
 
 export interface Template {
@@ -93,10 +95,11 @@ const initialThreads: Thread[] = [
         customerPhone: '+234 801 111 2222',
         channel: 'WhatsApp',
         lastMessage: 'Is the venue open today?',
-        lastMessageTime: Date.now() - 1000 * 60 * 5, // 5 mins ago
+        lastMessageTime: Date.now() - 1000 * 60 * 5,
         unreadCount: 1,
         status: 'open',
-        tags: ['inquiry']
+        tags: ['inquiry'],
+        branchId: 'head-office'
     },
     {
         id: 't2',
@@ -104,10 +107,11 @@ const initialThreads: Thread[] = [
         channel: 'SMS',
         customerPhone: '+234 809 999 8888',
         lastMessage: 'CONFIRM',
-        lastMessageTime: Date.now() - 1000 * 60 * 60 * 2, // 2 hours ago
+        lastMessageTime: Date.now() - 1000 * 60 * 60 * 2,
         unreadCount: 0,
         status: 'resolved',
-        tags: ['rsvp']
+        tags: ['rsvp'],
+        branchId: 'ikeja-branch'
     },
     {
         id: 't3',
@@ -115,20 +119,21 @@ const initialThreads: Thread[] = [
         channel: 'Email',
         customerEmail: 'carol@marvel.com',
         lastMessage: 'Thank you for the update.',
-        lastMessageTime: Date.now() - 1000 * 60 * 60 * 24, // 1 day ago
+        lastMessageTime: Date.now() - 1000 * 60 * 60 * 24,
         unreadCount: 0,
         status: 'open',
-        tags: ['vip']
+        tags: ['vip'],
+        branchId: 'abuja-branch'
     }
 ];
 
 const initialMessages: Message[] = [
-    { id: 'm1', threadId: 't1', direction: 'inbound', content: 'Hi, I wanted to ask about your opening hours.', status: 'read', timestamp: Date.now() - 1000 * 60 * 10, channel: 'WhatsApp' },
-    { id: 'm2', threadId: 't1', direction: 'inbound', content: 'Is the venue open today?', status: 'read', timestamp: Date.now() - 1000 * 60 * 5, channel: 'WhatsApp' },
-    { id: 'm3', threadId: 't2', direction: 'outbound', content: 'Please reply CONFIRM to secure your reservation.', status: 'delivered', timestamp: Date.now() - 1000 * 60 * 60 * 2.5, channel: 'SMS' },
-    { id: 'm4', threadId: 't2', direction: 'inbound', content: 'CONFIRM', status: 'read', timestamp: Date.now() - 1000 * 60 * 60 * 2, channel: 'SMS' },
-    { id: 'm5', threadId: 't3', direction: 'outbound', content: 'Your VIP pass is ready.', status: 'sent', timestamp: Date.now() - 1000 * 60 * 60 * 25, channel: 'Email' },
-    { id: 'm6', threadId: 't3', direction: 'inbound', content: 'Thank you for the update.', status: 'read', timestamp: Date.now() - 1000 * 60 * 60 * 24, channel: 'Email' }
+    { id: 'm1', threadId: 't1', direction: 'inbound', content: 'Hi, I wanted to ask about your opening hours.', status: 'read', timestamp: Date.now() - 1000 * 60 * 10, channel: 'WhatsApp', branchId: 'head-office' },
+    { id: 'm2', threadId: 't1', direction: 'inbound', content: 'Is the venue open today?', status: 'read', timestamp: Date.now() - 1000 * 60 * 5, channel: 'WhatsApp', branchId: 'head-office' },
+    { id: 'm3', threadId: 't2', direction: 'outbound', content: 'Please reply CONFIRM to secure your reservation.', status: 'delivered', timestamp: Date.now() - 1000 * 60 * 60 * 2.5, channel: 'SMS', branchId: 'ikeja-branch' },
+    { id: 'm4', threadId: 't2', direction: 'inbound', content: 'CONFIRM', status: 'read', timestamp: Date.now() - 1000 * 60 * 60 * 2, channel: 'SMS', branchId: 'ikeja-branch' },
+    { id: 'm5', threadId: 't3', direction: 'outbound', content: 'Your VIP pass is ready.', status: 'sent', timestamp: Date.now() - 1000 * 60 * 60 * 25, channel: 'Email', branchId: 'abuja-branch' },
+    { id: 'm6', threadId: 't3', direction: 'inbound', content: 'Thank you for the update.', status: 'read', timestamp: Date.now() - 1000 * 60 * 60 * 24, channel: 'Email', branchId: 'abuja-branch' }
 ];
 
 const initialTemplates: Template[] = [

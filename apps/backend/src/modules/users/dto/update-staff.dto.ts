@@ -13,7 +13,10 @@ export class UpdateStaffDto {
   @IsOptional()
   jobTitle?: string;
 
-  @ApiProperty({ example: ['dashboard', 'visitors', 'settings'], required: false })
+  @ApiProperty({
+    example: ['dashboard', 'visitors', 'settings'],
+    required: false,
+  })
   @IsArray()
   @IsOptional()
   permissions?: string[];

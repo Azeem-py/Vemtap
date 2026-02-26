@@ -76,10 +76,20 @@ export default function MultiDeviceTapPage() {
                 }
 
                 if (identity) {
+                    // Simulate mapping deviceId to branchId
+                    const branchMapping: Record<string, string> = {
+                        'DEV-001': 'head-office',
+                        'DEV-002': 'head-office',
+                        'DEV-003': 'ikeja-branch',
+                        'DEV-004': 'abuja-branch'
+                    };
+                    const assignedBranchId = branchMapping[deviceId as string] || 'head-office';
+
                     recordVisit();
                     recordExternalTap({
                         ...identity,
-                        phone: (identity as any).phone || ''
+                        phone: (identity as any).phone || '',
+                        branchId: assignedBranchId
                     });
 
                     // Loyalty Integration: Earn points if user is logged in

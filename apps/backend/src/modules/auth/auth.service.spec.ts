@@ -20,10 +20,14 @@ describe('AuthService', () => {
   beforeEach(async () => {
     const mockUsersService = {
       findByEmail: jest.fn(),
-      create: jest.fn().mockImplementation((u) => Promise.resolve({ ...u, id: 'user-1' })),
+      create: jest
+        .fn()
+        .mockImplementation((u) => Promise.resolve({ ...u, id: 'user-1' })),
     };
     const mockBusinessesService = {
-      create: jest.fn().mockImplementation((b) => Promise.resolve({ ...b, id: 'biz-1' })),
+      create: jest
+        .fn()
+        .mockImplementation((b) => Promise.resolve({ ...b, id: 'biz-1' })),
     };
     const mockMailService = {
       sendOtp: jest.fn(),
@@ -80,19 +84,23 @@ describe('AuthService', () => {
       const result = await service.registerOwner(dto);
 
       // Verify User Creation
-      expect(usersService.create).toHaveBeenCalledWith(expect.objectContaining({
-        email: dto.email,
-        role: UserRole.OWNER,
-      }));
+      expect(usersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: dto.email,
+          role: UserRole.OWNER,
+        }),
+      );
 
       // Verify Business Creation
-      expect(businessesService.create).toHaveBeenCalledWith(expect.objectContaining({
-        name: dto.businessName,
-        address: dto.businessAddress,
-        website: dto.businessWebsite,
-        whatsappNumber: dto.whatsappNumber,
-        officialEmail: dto.officialEmail,
-      }));
+      expect(businessesService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: dto.businessName,
+          address: dto.businessAddress,
+          website: dto.businessWebsite,
+          whatsappNumber: dto.whatsappNumber,
+          officialEmail: dto.officialEmail,
+        }),
+      );
 
       // Verify Response (should include token)
       expect(result).toHaveProperty('access_token');
@@ -101,7 +109,9 @@ describe('AuthService', () => {
 
     it('should throw ConflictException if email exists', async () => {
       usersService.findByEmail.mockResolvedValue({ id: 'existing' });
-      await expect(service.registerOwner({ email: 'test@test.com' } as any)).rejects.toThrow();
+      await expect(
+        service.registerOwner({ email: 'test@test.com' } as any),
+      ).rejects.toThrow();
     });
   });
 });

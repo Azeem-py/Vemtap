@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -41,7 +46,7 @@ export class AuthService {
 
     // Send Email
     await this.mailService.sendOtp(email, code);
-    
+
     return { message: 'OTP sent successfully' };
   }
 
@@ -70,7 +75,7 @@ export class AuthService {
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
-    if (user && await bcrypt.compare(pass, user.password)) {
+    if (user && (await bcrypt.compare(pass, user.password))) {
       const { password, ...result } = user;
       return result;
     }
@@ -87,14 +92,16 @@ export class AuthService {
 
   // --- Original Generic Register (Kept for compatibility) ---
   async register(registrationData: any) {
-    const existingUser = await this.usersService.findByEmail(registrationData.email);
+    const existingUser = await this.usersService.findByEmail(
+      registrationData.email,
+    );
     if (existingUser) {
       throw new ConflictException('Email already exists');
     }
 
     // Determine Role (Default to OWNER if businessName is provided, else CUSTOMER)
     let role = registrationData.role || UserRole.CUSTOMER;
-    
+
     // Security: Prevent unauthorized ADMIN registration
     if (role === UserRole.ADMIN) {
       throw new UnauthorizedException('Cannot register as Admin publicly');
@@ -125,7 +132,7 @@ export class AuthService {
         goal: registrationData.goal,
         ownerId: user.id,
       });
-      
+
       // Optionally link the owner user to the new businessId
       user.businessId = business.id;
       await this.usersService.create(user); // Save update
@@ -157,7 +164,9 @@ export class AuthService {
     // 2. Create Business with detailed info
     // Join array goals to string if needed, or update Business entity to support array.
     // Current entity 'goal' is a string. We can join them or pick the first.
-    const goalString = Array.isArray(dto.goals) ? dto.goals.join(', ') : dto.goals;
+    const goalString = Array.isArray(dto.goals)
+      ? dto.goals.join(', ')
+      : dto.goals;
 
     const business = await this.businessesService.create({
       name: dto.businessName,

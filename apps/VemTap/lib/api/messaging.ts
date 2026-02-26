@@ -37,6 +37,9 @@ export const messagingApi = {
         store.deductCredits(channel, cost);
 
         // 3. Create Message
+        const thread = store.threads.find(t => t.id === threadId);
+        const branchId = thread?.branchId || 'head-office';
+
         const newMessage: Message = {
             id: `msg_${Date.now()}`,
             threadId,
@@ -44,7 +47,8 @@ export const messagingApi = {
             content,
             status: 'sent',
             timestamp: Date.now(),
-            channel
+            channel,
+            branchId
         };
 
         store.addMessage(newMessage);
@@ -65,7 +69,8 @@ export const messagingApi = {
                 content: "Thanks for reaching out! We'll get back to you shortly.",
                 status: 'delivered',
                 timestamp: Date.now(),
-                channel
+                channel,
+                branchId
             };
             store.addMessage(reply);
             store.updateThread(threadId, {

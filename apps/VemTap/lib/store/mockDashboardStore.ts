@@ -11,11 +11,14 @@ export interface Visitor {
   status: 'new' | 'returning';
   optIn?: boolean;
   surveyAnswers?: Record<string, any>;
+  branchId: string;
+  location?: string;
 }
 
 export interface ActivityPoint {
   hour: string;
   visits: number;
+  branchId: string;
 }
 
 export interface Reward {
@@ -24,6 +27,7 @@ export interface Reward {
   points: number;
   description: string;
   active: boolean;
+  branchId?: string; // Optional: Some rewards might be specific to a branch
 }
 
 export interface Notification {
@@ -34,6 +38,7 @@ export interface Notification {
   read: boolean;
   type: 'info' | 'success' | 'warning' | 'error';
   scope: 'ADMIN' | 'DASHBOARD';
+  branchId?: string;
 }
 
 export interface Message {
@@ -50,6 +55,7 @@ export interface Message {
   opens?: number; // For Email/WhatsApp
   ctr: number; // Click-through rate percentage
   timestamp: number;
+  branchId: string;
 }
 
 export interface Template {
@@ -69,6 +75,7 @@ export interface Staff {
   role: 'Owner' | 'Manager' | 'Staff';
   status: 'Active' | 'Inactive';
   lastActive: string;
+  branchId: string;
 }
 
 export interface Device {
@@ -83,6 +90,7 @@ export interface Device {
   batteryLevel: number;
   totalScans: number;
   timestamp: number;
+  branchId: string;
 }
 
 export interface RedemptionRequest {
@@ -92,6 +100,7 @@ export interface RedemptionRequest {
   rewardTitle: string;
   timestamp: number;
   status: 'pending' | 'approved' | 'declined';
+  branchId: string;
 }
 
 export interface DashboardState {
@@ -112,6 +121,7 @@ export interface DashboardState {
   };
   // Actions
   addVisitor: (visitor: Visitor) => void;
+  importVisitors: (visitors: Visitor[]) => void;
   addReward: (reward: Reward) => void;
   updateReward: (id: string, reward: Partial<Reward>) => void;
   deleteReward: (id: string) => void;
@@ -138,7 +148,7 @@ export interface DashboardState {
   addRedemptionRequest: (request: Omit<RedemptionRequest, 'id' | 'status' | 'timestamp'>) => void;
   approveRedemption: (id: string) => void;
   declineRedemption: (id: string) => void;
-  recordExternalTap: (visitorData: { name: string; email?: string; phone: string; uniqueId?: string }) => void;
+  recordExternalTap: (visitorData: { name: string; email?: string; phone: string; uniqueId?: string; branchId?: string; location?: string }) => void;
   reset: () => void;
 }
 
@@ -152,7 +162,9 @@ const initialVisitors: Visitor[] = [
     timestamp: Date.now() - 120000, 
     status: 'new',
     optIn: true,
-    surveyAnswers: { q1: 5, q2: 'Yes' }
+    surveyAnswers: { q1: 5, q2: 'Yes' },
+    branchId: 'head-office',
+    location: 'Main Entrance'
   },
   { 
     id: '2', 
@@ -163,7 +175,9 @@ const initialVisitors: Visitor[] = [
     timestamp: Date.now() - 900000, 
     status: 'returning',
     optIn: true,
-    surveyAnswers: { q1: 4, q2: 'Maybe', q3: 'Great service!' }
+    surveyAnswers: { q1: 4, q2: 'Maybe', q3: 'Great service!' },
+    branchId: 'head-office',
+    location: 'Reception'
   },
   { 
     id: '3', 
@@ -172,7 +186,9 @@ const initialVisitors: Visitor[] = [
     time: '1 hour ago', 
     timestamp: Date.now() - 3600000, 
     status: 'new',
-    optIn: false 
+    optIn: false,
+    branchId: 'ikeja-branch',
+    location: 'Allen Ave Entrance'
   },
   { 
     id: '4', 
@@ -182,7 +198,9 @@ const initialVisitors: Visitor[] = [
     time: '2 hours ago', 
     timestamp: Date.now() - 7200000, 
     status: 'returning',
-    optIn: true 
+    optIn: true,
+    branchId: 'abuja-branch',
+    location: 'Apo Main'
   },
   { 
     id: '5', 
@@ -191,29 +209,34 @@ const initialVisitors: Visitor[] = [
     time: '3 hours ago', 
     timestamp: Date.now() - 10800000, 
     status: 'new',
-    optIn: false 
+    optIn: false,
+    branchId: 'head-office',
+    location: 'Side Gate'
   },
 ];
 
 const initialActivityData: ActivityPoint[] = [
-  { hour: '9 AM', visits: 12 },
-  { hour: '10 AM', visits: 24 },
-  { hour: '11 AM', visits: 35 },
-  { hour: '12 PM', visits: 48 },
-  { hour: '1 PM', visits: 42 },
-  { hour: '2 PM', visits: 38 },
-  { hour: '3 PM', visits: 45 },
-  { hour: '4 PM', visits: 52 },
+  { hour: '9 AM', visits: 12, branchId: 'head-office' },
+  { hour: '10 AM', visits: 24, branchId: 'head-office' },
+  { hour: '11 AM', visits: 35, branchId: 'head-office' },
+  { hour: '12 PM', visits: 48, branchId: 'head-office' },
+  { hour: '1 PM', visits: 42, branchId: 'head-office' },
+  { hour: '2 PM', visits: 38, branchId: 'head-office' },
+  { hour: '3 PM', visits: 45, branchId: 'head-office' },
+  { hour: '4 PM', visits: 52, branchId: 'head-office' },
+  { hour: '9 AM', visits: 5, branchId: 'ikeja-branch' },
+  { hour: '10 AM', visits: 10, branchId: 'ikeja-branch' },
+  { hour: '9 AM', visits: 8, branchId: 'abuja-branch' },
 ];
 
 const initialRewards: Reward[] = [
-  { id: '1', title: 'Free Coffee', points: 100, description: 'Get a free coffee on us', active: true },
+  { id: '1', title: 'Free Coffee', points: 100, description: 'Get a free coffee on us', active: true, branchId: 'head-office' },
   { id: '2', title: '10% Off', points: 250, description: '10% off your next purchase', active: true },
-  { id: '3', title: 'VIP Access', points: 500, description: 'VIP access for one month', active: false },
+  { id: '3', title: 'VIP Access', points: 500, description: 'VIP access for one month', active: false, branchId: 'abuja-branch' },
 ];
 
 const initialNotifications: Notification[] = [
-    { id: '1', title: 'Welcome', message: 'Welcome to your new dashboard!', timestamp: Date.now(), read: false, type: 'info', scope: 'DASHBOARD' },
+    { id: '1', title: 'Welcome', message: 'Welcome to your new dashboard!', timestamp: Date.now(), read: false, type: 'info', scope: 'DASHBOARD', branchId: 'head-office' },
     { id: '2', title: 'System Healthy', message: 'Platform services are running optimally.', timestamp: Date.now(), read: true, type: 'success', scope: 'ADMIN' },
     { id: '3', title: 'Pending Approval', message: '3 businesses are waiting for verification.', timestamp: Date.now() - 3600000, read: false, type: 'warning', scope: 'ADMIN' },
     { id: '4', title: 'Device Offline', message: '12 devices in Lagos sector are offline.', timestamp: Date.now() - 7200000, read: false, type: 'error', scope: 'ADMIN' },
@@ -232,7 +255,8 @@ const initialMessages: Message[] = [
     clicks: 156, 
     opens: 1180,
     ctr: 12.5,
-    timestamp: Date.now() - 86400000 
+    timestamp: Date.now() - 86400000,
+    branchId: 'head-office'
   },
   { 
     id: '2', 
@@ -245,7 +269,8 @@ const initialMessages: Message[] = [
     deliveryRate: 95,
     clicks: 84, 
     ctr: 20.3,
-    timestamp: Date.now() - 172800000 
+    timestamp: Date.now() - 172800000,
+    branchId: 'head-office'
   },
   { 
     id: '3', 
@@ -258,7 +283,8 @@ const initialMessages: Message[] = [
     deliveryRate: 0,
     clicks: 0, 
     ctr: 0,
-    timestamp: Date.now() + 86400000 
+    timestamp: Date.now() + 86400000,
+    branchId: 'head-office'
   },
   { 
     id: '4', 
@@ -272,20 +298,21 @@ const initialMessages: Message[] = [
     clicks: 312, 
     opens: 1950,
     ctr: 10.9,
-    timestamp: Date.now() - 604800000 
+    timestamp: Date.now() - 604800000,
+    branchId: 'head-office'
   },
 ];
 
 const initialStaff: Staff[] = [
-    { id: '1', name: 'John Manager', email: 'john@greenterrace.com', role: 'Owner', status: 'Active', lastActive: 'Now' },
-    { id: '2', name: 'Sarah Supervisor', email: 'sarah.s@example.com', role: 'Manager', status: 'Active', lastActive: '2h ago' },
-    { id: '3', name: 'Michael Cashier', email: 'mike.c@example.com', role: 'Staff', status: 'Active', lastActive: '1d ago' },
+    { id: '1', name: 'John Manager', email: 'john@greenterrace.com', role: 'Owner', status: 'Active', lastActive: 'Now', branchId: 'head-office' },
+    { id: '2', name: 'Sarah Supervisor', email: 'sarah.s@example.com', role: 'Manager', status: 'Active', lastActive: '2h ago', branchId: 'ikeja-branch' },
+    { id: '3', name: 'Michael Cashier', email: 'mike.c@example.com', role: 'Staff', status: 'Active', lastActive: '1d ago', branchId: 'head-office' },
 ];
 
 const initialDevices: Device[] = [
-    { id: '1', name: 'Main Entrance', type: 'Card', code: 'NFC-001', location: 'Front Door', assignedTo: 'Green Terrace Cafe', lastActive: '2 mins ago', status: 'active', batteryLevel: 85, totalScans: 1247, timestamp: Date.now() },
-    { id: '2', name: 'Table 5', type: 'Sticker', code: 'NFC-002', location: 'Dining Area', assignedTo: 'Tech Hub Lagos', lastActive: '15 mins ago', status: 'active', batteryLevel: 92, totalScans: 892, timestamp: Date.now() },
-    { id: '3', name: 'Checkout Counter', type: 'Fob', code: 'NFC-003', location: 'Cashier', assignedTo: 'Unassigned', lastActive: 'Never', status: 'inactive', batteryLevel: 0, totalScans: 2341, timestamp: Date.now() },
+    { id: '1', name: 'Main Entrance', type: 'Card', code: 'NFC-001', location: 'Front Door', assignedTo: 'Green Terrace Cafe', lastActive: '2 mins ago', status: 'active', batteryLevel: 85, totalScans: 1247, timestamp: Date.now(), branchId: 'head-office' },
+    { id: '2', name: 'Table 5', type: 'Sticker', code: 'NFC-002', location: 'Dining Area', assignedTo: 'Tech Hub Lagos', lastActive: '15 mins ago', status: 'active', batteryLevel: 92, totalScans: 892, timestamp: Date.now(), branchId: 'ikeja-branch' },
+    { id: '3', name: 'Checkout Counter', type: 'Fob', code: 'NFC-003', location: 'Cashier', assignedTo: 'Unassigned', lastActive: 'Never', status: 'inactive', batteryLevel: 0, totalScans: 2341, timestamp: Date.now(), branchId: 'abuja-branch' },
 ];
 
 const initialTemplates: Template[] = [
@@ -322,9 +349,11 @@ export const useMockDashboardStore = create<DashboardState>()(
           const hourLabel = currentHour > 12 ? `${currentHour - 12} PM` : `${currentHour === 0 ? 12 : currentHour} ${currentHour >= 12 ? 'PM' : 'AM'}`;
           
           const newActivity = [...state.activityData];
-          const activityIndex = newActivity.findIndex(a => a.hour === hourLabel);
+          const activityIndex = newActivity.findIndex(a => a.hour === hourLabel && a.branchId === visitor.branchId);
           if (activityIndex >= 0) {
              newActivity[activityIndex].visits += 1;
+          } else {
+             newActivity.push({ hour: hourLabel, visits: 1, branchId: visitor.branchId });
           }
 
           const newStats = { ...state.stats };
@@ -342,6 +371,10 @@ export const useMockDashboardStore = create<DashboardState>()(
             stats: newStats,
           };
         }),
+
+      importVisitors: (imported) => set((state) => ({
+        visitors: [...imported, ...state.visitors]
+      })),
 
       addReward: (reward) => set((state) => ({ rewards: [...state.rewards, reward] })),
       updateReward: (id, updates) => set((state) => ({
@@ -400,13 +433,29 @@ export const useMockDashboardStore = create<DashboardState>()(
         let newVisitors = [...state.visitors];
         let isReturning = false;
 
+        // Auto-Location Logic
+        const branchId = visitorData.branchId || 'head-office';
+        let location = visitorData.location;
+        
+        if (!location) {
+          // Fallback map for mock branches
+          const locationMap: Record<string, string> = {
+            'head-office': 'Victoria Island, Lagos',
+            'ikeja-branch': 'Allen Avenue, Ikeja',
+            'abuja-branch': 'Apo Garki, Abuja'
+          };
+          location = locationMap[branchId] || 'Main Location';
+        }
+
         if (existingIndex > -1) {
           isReturning = true;
           const updatedVisitor = {
             ...newVisitors[existingIndex],
             time: 'Just now',
             timestamp: Date.now(),
-            status: 'returning' as const
+            status: 'returning' as const,
+            branchId,
+            location
           };
           newVisitors.splice(existingIndex, 1);
           newVisitors.unshift(updatedVisitor);
@@ -417,7 +466,9 @@ export const useMockDashboardStore = create<DashboardState>()(
             phone: visitorData.phone,
             time: 'Just now',
             timestamp: Date.now(),
-            status: 'new' as const
+            status: 'new' as const,
+            branchId,
+            location
           };
           newVisitors.unshift(newVisitor);
         }
@@ -435,11 +486,12 @@ export const useMockDashboardStore = create<DashboardState>()(
         const notification: Notification = {
           id: `N-${Date.now()}`,
           title: isReturning ? 'Returning Visitor' : 'New Visitor',
-          message: `${visitorData.name} just tapped at your NFC point.`,
+          message: `${visitorData.name} just tapped at ${location}.`,
           timestamp: Date.now(),
           read: false,
           type: 'success',
-          scope: 'DASHBOARD'
+          scope: 'DASHBOARD',
+          branchId
         };
 
         return {
@@ -464,7 +516,8 @@ export const useMockDashboardStore = create<DashboardState>()(
           timestamp: Date.now(),
           read: false,
           type: 'warning',
-          scope: 'DASHBOARD'
+          scope: 'DASHBOARD',
+          branchId: request.branchId
         };
         
         return {
@@ -484,7 +537,8 @@ export const useMockDashboardStore = create<DashboardState>()(
           timestamp: Date.now(),
           read: false,
           type: 'success',
-          scope: 'DASHBOARD'
+          scope: 'DASHBOARD',
+          branchId: request.branchId
         };
 
         return {
@@ -504,7 +558,8 @@ export const useMockDashboardStore = create<DashboardState>()(
           timestamp: Date.now(),
           read: false,
           type: 'info',
-          scope: 'DASHBOARD'
+          scope: 'DASHBOARD',
+          branchId: request.branchId
         };
 
         return {
@@ -528,7 +583,7 @@ export const useMockDashboardStore = create<DashboardState>()(
         }),
     }),
     {
-      name: 'dashboard-storage-v2', 
+      name: 'dashboard-storage-v3', 
       storage: createJSONStorage(() => localStorage),
     }
   )
