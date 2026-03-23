@@ -35,8 +35,10 @@ describe('Auth & Notifications (e2e)', () => {
     const catRepo = dataSource.getRepository(Category);
     const subRepo = dataSource.getRepository(Subcategory);
 
-    const cat = await catRepo.save(catRepo.create({ name: 'Test Category', description: 'Test' }));
-    const sub = await subRepo.save(subRepo.create({ name: 'Test Subcategory', categoryId: cat.id }));
+    const catName = `Test Category ${Date.now()}`;
+    const subName = `Test Subcategory ${Date.now()}`;
+    const cat = await catRepo.save(catRepo.create({ name: catName, description: 'Test' }));
+    const sub = await subRepo.save(subRepo.create({ name: subName, categoryId: cat.id }));
     categoryId = cat.id;
     subcategoryId = sub.id;
     console.log('[AuthE2E] Seeding completed.');

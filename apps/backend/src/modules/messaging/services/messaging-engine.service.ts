@@ -115,6 +115,12 @@ export class MessagingEngineService {
         select: ['customerId'],
       });
       targetUserIds = [...new Set(visits.map(v => v.customerId))];
+    } else if (audienceType === AudienceType.GROUP || audienceType === AudienceType.TAGGED) {
+      // If group/tagged but no customerIds passed, it should fail unless front-end handled it
+      targetUserIds = customerIds || [];
+    } else if (!audienceType && targetUserIds.length > 0) {
+      // Use case: Individual message sent without specifying audienceType
+      targetUserIds = customerIds || [];
     } else if (audienceType === AudienceType.RECENT) {
       // Last 30 days visits
       const thirtyDaysAgo = new Date();
@@ -127,6 +133,21 @@ export class MessagingEngineService {
         .select(['visit.customerId'])
         .getMany();
       targetUserIds = [...new Set(recentVisits.map(v => v.customerId))];
+    } else if (audienceType === AudienceType.SEGMENT) {
+      if (!dto.segmentId) {
+        throw new BadRequestException('segmentId is required when audienceType is SEGMENT');
+      }
+
+      const segment = await this.dataSource.getRepository(Segment).findOne({
+        where: { id: dto.segmentId, branchId },
+        relations: ['users'],
+      });
+
+      if (!segment) {
+        throw new NotFoundException('Segment not found');
+      }
+
+      targetUserIds = segment.users?.map((u) => u.id) || [];
     }
 
     if (targetUserIds.length === 0) {
