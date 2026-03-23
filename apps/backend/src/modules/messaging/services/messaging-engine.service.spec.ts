@@ -3,6 +3,7 @@ import { MessagingEngineService } from './messaging-engine.service';
 import { getQueueToken } from '@nestjs/bullmq';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ComplianceService } from './compliance.service';
+import { AudienceType } from '../entities/message-campaign.entity';
 import { CreditService } from './credit.service';
 import { TemplateService } from './template.service';
 import { CampaignService } from './campaign.service';
@@ -199,6 +200,7 @@ describe('MessagingEngineService', () => {
           customerIds: [],
           channel: Channel.SMS,
           content: 'test',
+          audienceType: AudienceType.GROUP,
         }),
       ).rejects.toThrow('No customers found for selected audience');
     });
