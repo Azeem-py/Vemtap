@@ -72,10 +72,15 @@ export class AdministrationController {
   @Post('impersonation/customer-token')
   @Roles(UserRole.ADMIN, UserRole.AGENT)
   @ApiOperation({
-    summary: 'Admin/Agent: Generate a customer impersonation token to act on behalf of a customer',
-    description: 'The actor must be a logged-in Admin or Agent. The targetCustomer must be a Customer role user who has visited the targetBranch.',
+    summary:
+      'Admin/Agent: Generate a customer impersonation token to act on behalf of a customer',
+    description:
+      'The actor must be a logged-in Admin or Agent. The targetCustomer must be a Customer role user who has visited the targetBranch.',
   })
-  @ApiResponse({ status: 201, description: 'Customer impersonation token generated' })
+  @ApiResponse({
+    status: 201,
+    description: 'Customer impersonation token generated',
+  })
   async generateCustomerToken(
     @Request() req,
     @Body() dto: GenerateCustomerImpersonationTokenDto,
@@ -87,8 +92,10 @@ export class AdministrationController {
   @Roles(UserRole.ADMIN, UserRole.AGENT)
   @SkipSubscriptionCheck()
   @ApiOperation({
-    summary: 'Admin/Agent: Get current actor\'s impersonation permissions and profile',
-    description: 'Returns the role, permissions array, and whether this actor has full (ALL) access.',
+    summary:
+      "Admin/Agent: Get current actor's impersonation permissions and profile",
+    description:
+      'Returns the role, permissions array, and whether this actor has full (ALL) access.',
   })
   @ApiResponse({
     status: 200,
@@ -110,7 +117,10 @@ export class AdministrationController {
 
   @Get('impersonation/tokens')
   @Roles(UserRole.ADMIN, UserRole.AGENT)
-  @ApiOperation({ summary: 'Admin/Agent: List all active impersonation tokens for the current actor' })
+  @ApiOperation({
+    summary:
+      'Admin/Agent: List all active impersonation tokens for the current actor',
+  })
   async listMyTokens(@Request() req) {
     return this.adminService.listActorTokens(req.user.id);
   }

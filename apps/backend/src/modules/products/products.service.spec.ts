@@ -7,6 +7,8 @@ import {
   QuoteNegotiation,
   OfferedByRole,
 } from './entities/quote-negotiation.entity';
+import { OrderItem } from './entities/order-item.entity';
+import { ProductCategory } from './entities/product-category.entity';
 import { Order, OrderStatus, PaymentStatus } from './entities/order.entity';
 import { ProductType } from './entities/product-type.entity';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -21,6 +23,16 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 
+const mockOrderItemRepo = {
+  create: jest.fn(),
+  save: jest.fn(),
+  find: jest.fn(),
+};
+const mockProductCategoryRepo = {
+  create: jest.fn(),
+  save: jest.fn(),
+  find: jest.fn(),
+};
 const mockProductRepository = {
   create: jest.fn(),
   save: jest.fn(),
@@ -71,6 +83,11 @@ describe('ProductsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProductsService,
+        { provide: getRepositoryToken(OrderItem), useValue: mockOrderItemRepo },
+        {
+          provide: getRepositoryToken(ProductCategory),
+          useValue: mockProductCategoryRepo,
+        },
         {
           provide: getRepositoryToken(Product),
           useValue: mockProductRepository,
@@ -90,6 +107,11 @@ describe('ProductsService', () => {
         {
           provide: getRepositoryToken(ProductType),
           useValue: mockProductTypeRepository,
+        },
+        { provide: getRepositoryToken(OrderItem), useValue: mockOrderItemRepo },
+        {
+          provide: getRepositoryToken(ProductCategory),
+          useValue: mockProductCategoryRepo,
         },
         {
           provide: PaymentsService,
@@ -112,23 +134,19 @@ describe('ProductsService', () => {
         role: UserRole.OWNER,
         businessId: 'biz-1',
       } as User;
-      const dto: CreateOrderDto = {
-        productId: 'prod-1',
-        quantity: 5,
-        paymentReference: 'ref-123', // Even if provided, verification is skipped
-      };
+      const dto = { orderItems: [{ productId: 'prod-1', quantity: 5 }], branchId: 'branch-uuid' } as any;
 
       const product = { id: 'prod-1', price: 100, requestQuoteThreshold: 100 };
       mockProductRepository.findOne.mockResolvedValue(product);
 
       mockOrderRepository.create.mockReturnValue({
         id: 'order-1',
-        status: OrderStatus.PENDING,
+        status: OrderStatus.NEW,
         paymentStatus: PaymentStatus.PENDING,
       });
       mockOrderRepository.save.mockResolvedValue({
         id: 'order-1',
-        status: OrderStatus.PENDING,
+        status: OrderStatus.NEW,
         paymentStatus: PaymentStatus.PENDING,
       });
 
@@ -138,11 +156,11 @@ describe('ProductsService', () => {
       expect(mockOrderRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           paymentStatus: PaymentStatus.PENDING,
-          status: OrderStatus.PENDING,
-          userId: user.id,
+          status: OrderStatus.NEW,
+          user: user,
         }),
       );
-      expect(result.status).toBe(OrderStatus.PENDING);
+      expect(result.status).toBe(OrderStatus.NEW);
     });
   });
 
@@ -150,7 +168,7 @@ describe('ProductsService', () => {
     it('should mark order as COMPLETED and PAID', async () => {
       const order = {
         id: 'order-1',
-        status: OrderStatus.PENDING,
+        status: OrderStatus.NEW,
         paymentStatus: PaymentStatus.PENDING,
       };
       mockOrderRepository.findOne.mockResolvedValue(order);

@@ -9,6 +9,11 @@ import {
 } from './entities/quote-negotiation.entity';
 import { Order, OrderStatus } from './entities/order.entity';
 import { ProductType } from './entities/product-type.entity';
+import { ProductCategory } from './entities/product-category.entity';
+import { CreateProductCategoryDto } from './dto/create-product-category.dto';
+import { UpdateProductCategoryDto } from './dto/update-product-category.dto';
+import { OrderItem } from './entities/order-item.entity';
+
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductTypeDto } from './dto/create-product-type.dto';
@@ -36,6 +41,10 @@ export class ProductsService {
     private negotiationRepository: Repository<QuoteNegotiation>,
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
+    @InjectRepository(OrderItem)
+    private orderItemRepository: Repository<OrderItem>,
+    @InjectRepository(ProductCategory)
+    private productCategoryRepository: Repository<ProductCategory>,
     @InjectRepository(ProductType)
     private productTypeRepository: Repository<ProductType>,
     private readonly paymentsService: PaymentsService,
@@ -105,48 +114,55 @@ export class ProductsService {
   // --- End Product Type Methods ---
 
   async createDirectOrder(
-    user: User,
+    user: User | undefined,
     createOrderDto: CreateOrderDto,
   ): Promise<Order> {
-    const product = await this.findOne(createOrderDto.productId);
+    const orderItems: OrderItem[] = [];
+    let totalPrice = 0;
 
-    if (
-      product.requestQuoteThreshold &&
-      createOrderDto.quantity > product.requestQuoteThreshold
-    ) {
-      throw new BadRequestException(
-        `Quantity exceeds limit for direct order. Please request a quote.`,
-      );
-    }
+    for (const itemDto of createOrderDto.orderItems) {
+      const product = await this.findOne(itemDto.productId);
+      if (!product)
+        throw new NotFoundException(`Product ${itemDto.productId} not found`);
 
-    let unitPrice = Number(product.price);
+      if (product.stock !== undefined && product.stock !== null) {
+        if (product.stock < itemDto.quantity && !product.allowBackOrder) {
+          throw new BadRequestException(
+            `Product ${product.name} is out of stock or insufficient quantity.`,
+          );
+        }
 
-    if (product.priceTiers && Array.isArray(product.priceTiers)) {
-      const tier = product.priceTiers.find(
-        (t) =>
-          createOrderDto.quantity >= t.min &&
-          (t.max === null || createOrderDto.quantity <= t.max),
-      );
-      if (tier) {
-        unitPrice = Number(tier.price);
+        // Decrement stock
+        product.stock -= itemDto.quantity;
+        if (product.stock === 0) {
+          product.status = ProductStatus.OUT_OF_STOCK;
+        }
+        await this.productRepository.save(product);
       }
+
+      const itemPrice = product.price * itemDto.quantity;
+      totalPrice += itemPrice;
+
+      const orderItem = this.orderItemRepository.create({
+        product,
+        quantity: itemDto.quantity,
+        price: product.price,
+      });
+      orderItems.push(orderItem);
     }
-
-    const totalPrice = unitPrice * createOrderDto.quantity;
-
-    const paymentStatus = OrderPaymentStatus.PENDING;
 
     const order = this.orderRepository.create({
-      product,
-      productId: product.id,
-      quantity: createOrderDto.quantity,
-      unitPrice,
+      branchId: createOrderDto.branchId,
+      customerName: createOrderDto.customerName,
+      customerPhone: createOrderDto.customerPhone,
+      customerEmail: createOrderDto.customerEmail,
+      notes: createOrderDto.notes,
+      tableNumber: createOrderDto.tableNumber,
       totalPrice,
+      orderItems,
       user,
-      userId: user.id,
-      status: OrderStatus.PENDING,
-      paymentStatus,
-      paymentReference: createOrderDto.paymentReference,
+      status: OrderStatus.NEW,
+      paymentStatus: OrderPaymentStatus.PENDING,
     });
 
     return this.orderRepository.save(order);

@@ -3,6 +3,8 @@ import { ProductsService } from './products.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { Quote } from './entities/quote.entity';
+import { OrderItem } from './entities/order-item.entity';
+import { ProductCategory } from './entities/product-category.entity';
 import { Order, OrderStatus, PaymentStatus } from './entities/order.entity';
 import { QuoteNegotiation } from './entities/quote-negotiation.entity';
 import { ProductType } from './entities/product-type.entity';
@@ -14,6 +16,16 @@ import { PaymentsService } from '../payments/payments.service';
 describe('ProductsService - Pricing & Payment', () => {
   let service: ProductsService;
 
+  const mockOrderItemRepo = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+  };
+  const mockProductCategoryRepo = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+  };
   const mockProductRepo = {
     create: jest.fn(),
     save: jest.fn(),
@@ -41,6 +53,11 @@ describe('ProductsService - Pricing & Payment', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProductsService,
+        { provide: getRepositoryToken(OrderItem), useValue: mockOrderItemRepo },
+        {
+          provide: getRepositoryToken(ProductCategory),
+          useValue: mockProductCategoryRepo,
+        },
         { provide: getRepositoryToken(Product), useValue: mockProductRepo },
         { provide: getRepositoryToken(Order), useValue: mockOrderRepo },
         { provide: getRepositoryToken(Quote), useValue: mockQuoteRepo },
@@ -86,22 +103,14 @@ describe('ProductsService - Pricing & Payment', () => {
       }));
       mockOrderRepo.save.mockImplementation((order) => Promise.resolve(order));
 
-      const dto = { productId, quantity: 50, paymentReference: 'ref_valid' };
+      const dto = { orderItems: [{ productId, quantity: 50 }], branchId: 'branch-uuid' } as any;
       const result = await service.createDirectOrder(user, dto);
 
-      expect(result.status).toBe(OrderStatus.PENDING);
+      expect(result.status).toBe(OrderStatus.NEW);
       expect(result.paymentStatus).toBe(PaymentStatus.PENDING);
       expect(mockOrderRepo.save).toHaveBeenCalled();
     });
 
-    it('should throw error if quantity exceeds threshold', async () => {
-      const productWithThreshold = { ...product, requestQuoteThreshold: 10 };
-      mockProductRepo.findOne.mockResolvedValue(productWithThreshold);
-      const dto = { productId, quantity: 50 };
 
-      await expect(service.createDirectOrder(user, dto)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
   });
 });

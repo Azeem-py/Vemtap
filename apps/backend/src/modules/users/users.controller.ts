@@ -96,7 +96,10 @@ export class UsersController {
   async getTeam(@Request() req, @Query() filter: BranchFilterDto) {
     const businessId = req.user.businessId;
 
-    if (filter.allBranches && (req.user.role === UserRole.OWNER || req.user.role === UserRole.ADMIN)) {
+    if (
+      filter.allBranches &&
+      (req.user.role === UserRole.OWNER || req.user.role === UserRole.ADMIN)
+    ) {
       return this.usersService.findTeamMembers({ businessId });
     }
 

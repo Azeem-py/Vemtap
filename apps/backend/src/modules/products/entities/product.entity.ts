@@ -1,12 +1,18 @@
 import { Entity, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { AbstractBaseEntity } from '../../../common/entities/base.entity';
+import { Business } from '../../businesses/entities/business.entity';
+import { Branch } from '../../branches/entities/branch.entity';
+import { ProductCategory } from './product-category.entity';
+import { OrderItem } from './order-item.entity';
 import { Quote } from './quote.entity';
 import { ProductType } from './product-type.entity';
 
 export enum ProductStatus {
   PUBLISHED = 'Published',
   UNPUBLISHED = 'Unpublished',
+  OUT_OF_STOCK = 'out of stock',
+  SUSPENDED = 'suspended',
 }
 
 @Entity('products')
@@ -110,4 +116,45 @@ export class Product extends AbstractBaseEntity {
 
   @OneToMany(() => Quote, (quote) => quote.product)
   quotes: Quote[];
+
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'businessId' })
+  business: Business;
+
+  @ApiProperty({ example: 'business-uuid' })
+  @Column({ nullable: true })
+  businessId: string;
+
+  @ManyToOne(() => Branch, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'branchId' })
+  branch: Branch;
+
+  @ApiProperty({ example: 'branch-uuid' })
+  @Column({ nullable: true })
+  branchId: string;
+
+  @ManyToOne(() => ProductCategory, (category) => category.products, {
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'categoryId' })
+  category: ProductCategory;
+
+  @ApiProperty({ example: 'category-uuid', required: false })
+  @Column({ nullable: true })
+  categoryId: string;
+
+  @ApiProperty({ example: 100, required: false, description: 'Stock quantity' })
+  @Column({ type: 'int', nullable: true })
+  stock: number;
+
+  @ApiProperty({ example: false, default: false })
+  @Column({ type: 'boolean', default: false })
+  allowBackOrder: boolean;
+
+  @ApiProperty({ example: 'Policy violation', required: false })
+  @Column({ type: 'text', nullable: true })
+  suspensionNote: string;
+
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.product)
+  orderItems: OrderItem[];
 }

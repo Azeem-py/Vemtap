@@ -9,6 +9,7 @@ import {
   IsObject,
   IsBoolean,
   ValidateNested,
+  IsUUID,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductStatus } from '../entities/product.entity';
@@ -136,4 +137,34 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   productTypeId?: string;
+
+  @ApiProperty({ example: 'business-uuid', required: false })
+  @IsUUID()
+  @IsOptional()
+  businessId?: string;
+
+  @ApiProperty({ example: 'branch-uuid', required: false })
+  @IsUUID()
+  @IsOptional()
+  branchId?: string;
+
+  @ApiProperty({ example: 'category-uuid', required: false })
+  @IsUUID()
+  @IsOptional()
+  categoryId?: string;
+
+  @ApiProperty({ example: 100, required: false })
+  @IsNumber()
+  @IsOptional()
+  stock?: number;
+
+  @ApiProperty({ example: false, required: false })
+  @IsBoolean()
+  @IsOptional()
+  allowBackOrder?: boolean;
+
+  @ApiProperty({ example: 'Policy violation', required: false })
+  @IsString()
+  @IsOptional()
+  suspensionNote?: string;
 }

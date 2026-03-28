@@ -5,6 +5,8 @@ import { ProductType } from './entities/product-type.entity';
 import { Product } from './entities/product.entity';
 import { Quote } from './entities/quote.entity';
 import { Order } from './entities/order.entity';
+import { OrderItem } from './entities/order-item.entity';
+import { ProductCategory } from './entities/product-category.entity';
 import { QuoteNegotiation } from './entities/quote-negotiation.entity';
 import { Repository } from 'typeorm';
 import { PaymentsService } from '../payments/payments.service';
@@ -23,6 +25,16 @@ describe('ProductsService - Product Types', () => {
     remove: jest.fn(),
   };
 
+  const mockOrderItemRepo = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+  };
+  const mockProductCategoryRepo = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+  };
   const mockProductRepo = {
     create: jest.fn(),
     save: jest.fn(),
@@ -41,6 +53,11 @@ describe('ProductsService - Product Types', () => {
         {
           provide: getRepositoryToken(ProductType),
           useValue: mockProductTypeRepo,
+        },
+        { provide: getRepositoryToken(OrderItem), useValue: mockOrderItemRepo },
+        {
+          provide: getRepositoryToken(ProductCategory),
+          useValue: mockProductCategoryRepo,
         },
         { provide: getRepositoryToken(Product), useValue: mockProductRepo },
         { provide: getRepositoryToken(Order), useValue: mockOrderRepo },

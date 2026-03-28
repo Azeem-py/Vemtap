@@ -8,15 +8,20 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { AbstractBaseEntity } from '../../../common/entities/base.entity';
+import { Business } from '../../businesses/entities/business.entity';
+import { Branch } from '../../branches/entities/branch.entity';
+import { OrderItem } from './order-item.entity';
 import { Quote } from './quote.entity';
 import { Product } from './product.entity';
 import { User } from '../../users/entities/user.entity';
 import { Device } from '../../devices/entities/device.entity';
 
 export enum OrderStatus {
+  NEW = 'New',
   PENDING = 'Pending',
+  PROCESSING = 'Processing',
   READY = 'Ready',
-  COMPLETED = 'Completed', // Optional mapping
+  COMPLETED = 'Completed',
 }
 
 export enum PaymentStatus {
@@ -89,4 +94,43 @@ export class Order extends AbstractBaseEntity {
 
   @OneToMany(() => Device, (device) => device.order)
   devices: Device[];
+
+  @ManyToOne(() => Business, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'businessId' })
+  business: Business;
+
+  @ApiProperty({ example: 'business-uuid' })
+  @Column({ nullable: true })
+  businessId: string;
+
+  @ManyToOne(() => Branch, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'branchId' })
+  branch: Branch;
+
+  @ApiProperty({ example: 'branch-uuid' })
+  @Column({ nullable: true })
+  branchId: string;
+
+  @ApiProperty({ example: 'John Doe', required: false })
+  @Column({ nullable: true })
+  customerName: string;
+
+  @ApiProperty({ example: '+1234567890', required: false })
+  @Column({ nullable: true })
+  customerPhone: string;
+
+  @ApiProperty({ example: 'john@example.com', required: false })
+  @Column({ nullable: true })
+  customerEmail: string;
+
+  @ApiProperty({ example: 'Please add extra sauce', required: false })
+  @Column({ type: 'text', nullable: true })
+  notes: string;
+
+  @ApiProperty({ example: 'Table 5', required: false })
+  @Column({ nullable: true })
+  tableNumber: string;
+
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.order, { cascade: true })
+  orderItems: OrderItem[];
 }

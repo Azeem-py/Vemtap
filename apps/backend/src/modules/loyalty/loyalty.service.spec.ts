@@ -129,7 +129,9 @@ describe('LoyaltyService', () => {
 
     it('should call findAndCount with correct default params', async () => {
       const mockBranchRepo = module.get(getRepositoryToken(Branch));
-      jest.spyOn(mockBranchRepo, 'findOne').mockResolvedValueOnce({ id: 'branch-123' } as any);
+      jest
+        .spyOn(mockBranchRepo, 'findOne')
+        .mockResolvedValueOnce({ id: 'branch-123' } as any);
 
       const mockRewardRepo = module.get(getRepositoryToken(Reward));
       jest.spyOn(mockRewardRepo, 'findAndCount').mockResolvedValueOnce([[], 0]);

@@ -19,6 +19,9 @@ import { CreateProductTypeDto } from './dto/create-product-type.dto';
 import { UpdateProductTypeDto } from './dto/update-product-type.dto';
 import { Product } from './entities/product.entity';
 import { ProductType } from './entities/product-type.entity';
+import { CreateProductCategoryDto } from './dto/create-product-category.dto';
+import { ProductCategory } from './entities/product-category.entity';
+
 import { Quote } from './entities/quote.entity';
 import { Order } from './entities/order.entity';
 import { User, UserRole } from '../users/entities/user.entity';
@@ -60,6 +63,81 @@ export class ProductsController {
   })
   findAll(@Query('productTypeId') productTypeId?: string) {
     return this.productsService.findAllPublished(productTypeId);
+  }
+
+  // --- Category Endpoints ---
+
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  @ApiBearerAuth()
+  @Post('categories')
+  @ApiOperation({ summary: 'Create a new product category' })
+  @ApiResponse({ status: 201, type: ProductCategory })
+  createCategory(@Body() dto: CreateProductCategoryDto, @Request() req: any) {
+    // Assuming staff branch validation is done here or via guards
+    return this.productsService.createCategory(
+      dto,
+      req.user.businessId,
+      req.user.branchId,
+    );
+  }
+
+  @Public()
+  @Get('categories/branch/:branchId')
+  @ApiOperation({ summary: 'Get all categories for a branch (Public)' })
+  @ApiResponse({ status: 200, type: [ProductCategory] })
+  findAllCategories(@Param('branchId') branchId: string) {
+    return this.productsService.findAllCategories(branchId);
+  }
+
+  // --- Branch Products Endpoints ---
+  @Public()
+  @Get('branch/:branchId')
+  @ApiOperation({
+    summary: 'Get all products for a branch with filters (Public)',
+  })
+  @ApiResponse({ status: 200 })
+  findAllByBranch(@Param('branchId') branchId: string, @Query() query: any) {
+    return this.productsService.findAllByBranch(branchId, query);
+  }
+
+  @Roles(UserRole.OWNER, UserRole.MANAGER)
+  @ApiBearerAuth()
+  @Post(':id/import')
+  @ApiOperation({ summary: 'Import a product to another branch' })
+  @ApiResponse({ status: 201, type: Product })
+  importProductToBranch(
+    @Param('id') id: string,
+    @Body('targetBranchId') targetBranchId: string,
+  ) {
+    return this.productsService.importProductToBranch(id, targetBranchId);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @Patch(':id/suspend')
+  @ApiOperation({ summary: 'Suspend a product (Admin only)' })
+  @ApiResponse({ status: 200, type: Product })
+  suspendProduct(@Param('id') id: string, @Body('note') note: string) {
+    return this.productsService.suspendProduct(id, note);
+  }
+
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @Patch(':id/unsuspend')
+  @ApiOperation({ summary: 'Unsuspend a product (Admin only)' })
+  @ApiResponse({ status: 200, type: Product })
+  unsuspendProduct(@Param('id') id: string) {
+    return this.productsService.unsuspendProduct(id);
+  }
+
+  // --- Branch Orders Endpoints ---
+  @Roles(UserRole.OWNER, UserRole.MANAGER, UserRole.STAFF)
+  @ApiBearerAuth()
+  @Get('orders/branch/:branchId')
+  @ApiOperation({ summary: 'Get all orders for a branch' })
+  @ApiResponse({ status: 200, type: [Order] })
+  getBranchOrders(@Param('branchId') branchId: string) {
+    return this.productsService.getBranchOrders(branchId);
   }
 
   // --- Product Types Endpoints ---

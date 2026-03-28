@@ -176,7 +176,8 @@ export class VisitorsService {
     }
 
     // Get unique IDs for pagination
-    const idQb = baseQb.clone()
+    const idQb = baseQb
+      .clone()
       .select('user.id')
       .groupBy('user.id')
       .orderBy('MAX(visit.createdAt)', 'DESC')
@@ -184,7 +185,7 @@ export class VisitorsService {
       .limit(limit);
 
     const idResults = await idQb.getRawMany();
-    const userIds = idResults.map(r => r.user_id);
+    const userIds = idResults.map((r) => r.user_id);
 
     if (userIds.length === 0) {
       return { data: [], total: 0, page, limit };
@@ -198,26 +199,25 @@ export class VisitorsService {
 
     // Re-sort because find with In() doesn't guarantee order
     // And also we want to order visits within each user
-    users.forEach(u => {
+    users.forEach((u) => {
       if (u.visits) {
         u.visits.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       }
     });
-    
+
     // Sort users to match the original order (by last visit)
-    const sortedUsers = userIds.map(id => users.find(u => u.id === id)!);
+    const sortedUsers = userIds.map((id) => users.find((u) => u.id === id)!);
 
     // Reliable count
-    const countQb = baseQb.clone()
-      .select('user.id')
-      .groupBy('user.id');
-    
-    const totalRaw = await this.dataSource.createQueryBuilder()
+    const countQb = baseQb.clone().select('user.id').groupBy('user.id');
+
+    const totalRaw = await this.dataSource
+      .createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from(`(${countQb.getQuery()})`, 'subquery')
       .setParameters(countQb.getParameters())
       .getRawOne();
-    
+
     const total = parseInt(totalRaw?.count || '0', 10);
 
     const data: VisitorResponseDto[] = sortedUsers.map((user) =>
@@ -598,7 +598,8 @@ export class VisitorsService {
       );
     }
 
-    const usersMatchQb = baseQb.clone()
+    const usersMatchQb = baseQb
+      .clone()
       .select('user.id')
       .groupBy('user.id')
       .having('MIN(visit.createdAt) >= :startOfWeek', { startOfWeek })
@@ -607,7 +608,7 @@ export class VisitorsService {
       .limit(limit);
 
     const usersMatches = await usersMatchQb.getRawMany();
-    const userIds = usersMatches.map(m => m.user_id);
+    const userIds = usersMatches.map((m) => m.user_id);
 
     if (userIds.length === 0) {
       return { data: [], total: 0 };
@@ -619,21 +620,23 @@ export class VisitorsService {
     });
 
     // Reliable count for grouped queries with HAVING
-    const countQb = baseQb.clone()
+    const countQb = baseQb
+      .clone()
       .select('user.id')
       .groupBy('user.id')
       .having('MIN(visit.createdAt) >= :startOfWeek', { startOfWeek });
-    
-    const totalRaw = await this.dataSource.createQueryBuilder()
+
+    const totalRaw = await this.dataSource
+      .createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from(`(${countQb.getQuery()})`, 'subquery')
       .setParameters(countQb.getParameters())
       .getRawOne();
-    
+
     const total = parseInt(totalRaw?.count || '0', 10);
 
     // Sort to match dataQb order
-    const sortedUsers = userIds.map(id => users.find(u => u.id === id)!);
+    const sortedUsers = userIds.map((id) => users.find((u) => u.id === id)!);
 
     const dtos = sortedUsers.map((u) => ({
       id: u.id,
@@ -672,7 +675,7 @@ export class VisitorsService {
     const startOfWeek = new Date();
     startOfWeek.setDate(today.getDate() - today.getDay()); // Start of Sunday/current week
     startOfWeek.setHours(0, 0, 0, 0);
-    
+
     const newWeeklyRaw = await this.visitRepository
       .createQueryBuilder('visit')
       .select('visit.customerId')
@@ -744,7 +747,8 @@ export class VisitorsService {
       );
     }
 
-    const dataQb = baseQb.clone()
+    const dataQb = baseQb
+      .clone()
       .select([
         'user.id as id',
         'user.firstName as "firstName"',
@@ -763,17 +767,19 @@ export class VisitorsService {
     const rawData = await dataQb.getRawMany();
 
     // Reliable count for grouped queries with HAVING
-    const countQb = baseQb.clone()
+    const countQb = baseQb
+      .clone()
       .select('user.id')
       .groupBy('user.id')
       .having('COUNT(visit.id) > 1');
-    
-    const totalRaw = await this.dataSource.createQueryBuilder()
+
+    const totalRaw = await this.dataSource
+      .createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from(`(${countQb.getQuery()})`, 'subquery')
       .setParameters(countQb.getParameters())
       .getRawOne();
-    
+
     const total = parseInt(totalRaw?.count || '0', 10);
 
     const dtos = rawData.map((r) => ({
@@ -823,12 +829,16 @@ export class VisitorsService {
       });
     }
 
-    const returningCountRaw = await this.dataSource.createQueryBuilder()
+    const returningCountRaw = await this.dataSource
+      .createQueryBuilder()
       .select('COUNT(*)', 'count')
-      .from(`(${returningCountQb.select('user.id').groupBy('user.id').having('COUNT(visit.id) > 1').getQuery()})`, 'subquery')
+      .from(
+        `(${returningCountQb.select('user.id').groupBy('user.id').having('COUNT(visit.id) > 1').getQuery()})`,
+        'subquery',
+      )
       .setParameters(returningCountQb.getParameters())
       .getRawOne();
-    
+
     const returningCount = parseInt(returningCountRaw?.count || '0', 10);
 
     const rate =
@@ -847,9 +857,13 @@ export class VisitorsService {
       vipCountQb.andWhere('visit.businessId = :businessId', { businessId });
     }
 
-    const vipCountRaw = await this.dataSource.createQueryBuilder()
+    const vipCountRaw = await this.dataSource
+      .createQueryBuilder()
       .select('COUNT(*)', 'count')
-      .from(`(${vipCountQb.select('user.id').groupBy('user.id').having('COUNT(visit.id) > 10').getQuery()})`, 'subquery')
+      .from(
+        `(${vipCountQb.select('user.id').groupBy('user.id').having('COUNT(visit.id) > 10').getQuery()})`,
+        'subquery',
+      )
       .setParameters(vipCountQb.getParameters())
       .getRawOne();
 
